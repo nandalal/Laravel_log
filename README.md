@@ -7,60 +7,184 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+## Step 1: Create a Dockerfile for PHP
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Path: /laravel-project/docker/php/Dockerfile
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+dockerfile
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+# Use an official PHP image as a parent image
+FROM php:8.2-fpm
 
-## Learning Laravel
+# Set working directory
+WORKDIR /var/www/html
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    zip \
+    unzip \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+# Install Composer
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# Copy application
+COPY . /var/www/html
 
-## Laravel Sponsors
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Expose port 9000
+EXPOSE 9000
 
-### Premium Partners
+# Start PHP-FPM
+CMD ["php-fpm"]
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## Step 2: Create a Nginx Configuration File
 
-## Contributing
+Path: /laravel-project/docker/nginx/default.conf
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+nginx
 
-## Code of Conduct
+server {
+    listen 80;
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    root /var/www/html/public;
+    index index.php index.html;
 
-## Security Vulnerabilities
+    server_name localhost;
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
 
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass php:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+
+## Step 3: Create docker-compose.yml
+
+Path: /laravel-project/docker/docker-compose.yml
+
+yaml
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: docker/php/Dockerfile
+    container_name: laravel_app
+    volumes:
+      - ../:/var/www/html
+    networks:
+      - laravel
+
+  nginx:
+    image: nginx:latest
+    container_name: laravel_nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ../:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel
+
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - laravel
+
+networks:
+  laravel:
+
+volumes:
+  mysql_data:
+  
+## Step 4: Update .env for Database Configuration
+
+Update your .env file to connect to the MySQL container:
+
+env
+
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel_user
+DB_PASSWORD=laravel_password
+
+## Step 5: Build and Start Docker Containers
+
+Run the following commands to build and start your containers:
+
+bash
+
+# Navigate to the Docker directory
+cd /laravel-project/docker
+
+# Build and start containers
+docker-compose up -d --build
+
+## Step 6: Install Dependencies
+
+Once the containers are running, access the app container and install Laravel dependencies:
+
+bash
+
+# Enter the app container
+docker exec -it laravel_app bash
+
+# Install Composer dependencies
+composer install
+
+# Exit the container
+exit
+
+## Step 7: Set Permissions
+
+Set proper permissions for Laravel directories:
+
+bash
+
+docker exec -it laravel_app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+## Step 8: Run Migrations
+
+Run Laravel migrations to set up the database:
+
+bash
+
+docker exec -it laravel_app bash -c "php artisan migrate"
+Step 9: Access Your Application
+Your Laravel application should now be accessible at http://localhost:8000.
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
