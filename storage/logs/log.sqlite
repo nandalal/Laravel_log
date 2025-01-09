@@ -1,0 +1,12 @@
+[2025-01-09 05:11:50] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.04 seconds"} 
+[2025-01-09 05:11:50] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.13 seconds"} 
+[2025-01-09 05:14:54] local.INFO: Request Information {"method":"POST","url":"http://localhost:8000/api/register","duration":"0.98 seconds"} 
+[2025-01-09 05:20:20] local.INFO: Request Information {"method":"POST","url":"http://localhost:8000/api/login","duration":"0.89 seconds"} 
+[2025-01-09 06:26:16] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.36 seconds"} 
+[2025-01-09 06:26:16] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.87 seconds"} 
+[2025-01-09 06:26:38] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.02 seconds"} 
+[2025-01-09 06:26:38] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.07 seconds"} 
+[2025-01-09 06:26:59] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.02 seconds"} 
+[2025-01-09 06:26:59] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.05 seconds"} 
+[2025-01-09 06:48:25] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.04 seconds"} 
+[2025-01-09 06:48:31] local.INFO: Request Information {"method":"GET","url":"http://127.0.0.1:8000","duration":"0.03 seconds"} 
